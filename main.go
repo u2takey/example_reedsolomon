@@ -35,12 +35,14 @@ func main() {
 
 	if *decode{
 		shards := make([][]byte, 8)
+		var missingShards []int
 		for i:= 0; i< 8; i ++{
 			encodeFile := path.Join(*encodePath, fmt.Sprintf("encode_%d", i))
 			data, err := ioutil.ReadFile(encodeFile)
 			if err == nil {
 				shards[i] = data
 			} else if os.IsNotExist(err){
+				missingShards = append(missingShards, i)
 				continue
 			}else {
 				panic(err)
@@ -51,6 +53,14 @@ func main() {
 		if err != nil{
 			panic(err)
 		}
+		for _, index := range missingShards{
+			encodeFile := path.Join(*encodePath, fmt.Sprintf("encode_%d", index))
+			err := ioutil.WriteFile(encodeFile, shards[index], 0644)
+			if err != nil{
+				panic(err)
+			}
+		}
+
 		fmt.Printf("reconstruct data done\n")
 		f, err := os.OpenFile(*fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil{
